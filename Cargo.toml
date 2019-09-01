@@ -2,6 +2,7 @@
 name = "rust_browser"
 version = "0.1.0"
 authors = ["seijimatsuda <seiji3030@gmail.com>"]
-edition = "2019"
+edition = "2018"
 
 [dependencies]
+html5ever = "*"
