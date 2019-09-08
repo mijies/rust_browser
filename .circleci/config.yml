@@ -2,29 +2,11 @@ version: 2.1
 jobs:
   build:
     docker:
-      - image: ubuntu:16.04
-      # - image: circleci/rust
+      - image: circleci/rust
 
     steps:
       - checkout
       - run:
-          command: set -eux
-      - run:
-          command: apt-get update
-      - run:
-          command: apt-get install -y zlib1g-dev wget curl clang
-      - run:
-          command: |
-            wget "https://static.rust-lang.org/rustup/dist/x86_64-unknown-linux-gnu/rustup-init"
-            chmod +x rustup-init
-            ./rustup-init -y --no-modify-path --default-toolchain nightly
-            RUSTUP_HOME=~/.cargo/bin/rustup
-            CARGO_HOME=~/.cargo/bin/cargo
-            chmod -R a+w $RUSTUP_HOME $CARGO_HOME;
-            rm rustup-init
-            source ~/.cargo/env
-      - run:
           name: Test
-          command:
-            export PATH=~/.cargo/bin:$PATH
+          command: |
             cargo test
