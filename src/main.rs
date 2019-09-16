@@ -1,9 +1,7 @@
 
-extern crate rust_browser;
-use rust_browser::renderer;
+use rust_browser::html;
 use rust_browser::css;
 
-extern crate clap;
 use clap::{App, Arg};
 
 use std::fs::OpenOptions;
@@ -31,7 +29,8 @@ fn main() {
         .read_to_string(&mut html_source)
         .ok()
         .expect("cannot read file");
-    renderer::show_html(html_source.as_str());
+    let html_tree = html::parse(html_source);
+    println!("{}", html_tree);
 
     println!("CSS:");
     let mut css_source = "".to_string();
@@ -42,5 +41,6 @@ fn main() {
         .read_to_string(&mut css_source)
         .ok()
         .expect("cannot read file");
-    css::show_css(css_source.as_str());
+    let stylesheet = css::parse(css_source);
+    css::show_css(&stylesheet);
 }

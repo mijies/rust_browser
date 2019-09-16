@@ -5,6 +5,4 @@ authors = ["seijimatsuda <seiji3030@gmail.com>"]
 edition = "2018"
 
 [dependencies]
-html5ever = "*"
-tendril = "*"
 clap = "*"

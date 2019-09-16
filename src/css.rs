@@ -59,10 +59,10 @@ impl Value {
 }
 
 // https://www.w3.org/TR/selectors/#specificity
-type Specificity = (usize, usize, usize);
+pub type Specificity = (usize, usize, usize);
 
 impl Selector {
-    fn specificity(&self) -> Specificity {
+    pub fn specificity(&self) -> Specificity {
         let Selector::Simple(ref selector) = *self;
         let a = selector.id.iter().count();
         let b = selector.class.len();
@@ -71,9 +71,9 @@ impl Selector {
     }
 }
 
-pub fn show_css(source: &str) {
-    let stylesheet = parse_css(source.to_string());
-    for rule in stylesheet.rules {
+// TODO: implement fmt::Diaplay
+pub fn show_css(stylesheet: &Stylesheet) {
+    for rule in &stylesheet.rules {
         for (i, selector) in rule.selectors.iter().enumerate() {
             let &Selector::Simple(ref selector) = selector;
             if let Some(ref id) = selector.id {
@@ -89,14 +89,14 @@ pub fn show_css(source: &str) {
             }
         }
         println!(" {{");
-        for declaration in rule.declarations {
+        for declaration in &rule.declarations {
             println!(
                 "  {}: {};", 
                 declaration.name,
                 match declaration.value {
-                    Value::Keyword(s) => s,
-                    Value::Length(f, Unit::Px) => format!("{}px", f),
-                    Value::Color(c) => {
+                    Value::Keyword(ref s) => s.clone(),
+                    Value::Length(ref f, Unit::Px) => format!("{}px", f),
+                    Value::Color(ref c) => {
                         format!("rgba({}, {}, {}, {})", c.r, c.g, c.b, c.a)
                     }
                 }
@@ -106,7 +106,7 @@ pub fn show_css(source: &str) {
     }
 }
 
-fn parse_css(source: String) -> Stylesheet {
+pub fn parse(source: String) -> Stylesheet {
     let mut parser = Parser {
         pos: 0,
         input: source,
@@ -307,7 +307,7 @@ impl Parser {
 #[test]
 fn test_parse_css() {
     let src = "div { width: 100px; height: 50px; color: #ffffff; background-color: #003300; }";
-    let stylesheet = parse_css(src.to_string());
+    let stylesheet = parse(src.to_string());
     assert_eq!(
         stylesheet,
         Stylesheet {
