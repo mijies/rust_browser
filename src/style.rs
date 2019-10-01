@@ -1,23 +1,23 @@
 use crate::dom::{ElementData, Node, NodeType};
-use crate::css::{Rule, Selector, SimpleSelector, Specificity, Stylesheet, Value};
+use crate::css::{Rule, Selector, SimpleSelector, Specificity, Stylesheet, Unit, Value};
 use std::collections::HashMap;
 
 type PropertyMap = HashMap<String, Value>;
 
-pub struct StyleNode<'a> {
+pub struct StyledNode<'a> {
     pub node: &'a Node,
     pub specified_values: PropertyMap,
-    pub children: Vec<StyleNode<'a>>,
+    pub children: Vec<StyledNode<'a>>,
 }
 
-#[derive(PartialEq)]
+#[derive(Debug, PartialEq)]
 pub enum Display {
     Inline,
     Block,
     None,
 }
 
-impl<'a> StyleNode<'a> {
+impl<'a> StyledNode<'a> {
     pub fn display(&self) -> Display {
         match self.value("display") {
             Some(Value::Keyword(s)) => match &*s {
@@ -37,21 +37,38 @@ impl<'a> StyleNode<'a> {
         )
     }
 
-    fn value(&self, name: &str) -> Option<Value> {
+    pub fn has_text_node(&self) -> bool {
+        match self.node.data {
+            NodeType::Text(_) => true,
+            _ => false,
+        }
+    }
+
+    pub fn value(&self, name: &str) -> Option<Value> {
         self.specified_values.get(name).cloned()
     }
 }
 
-pub fn style_tree<'a>(root: &'a Node, stylesheet: &'a Stylesheet) -> StyleNode<'a> {
-    StyleNode {
+pub fn style_tree<'a>(root: &'a Node, stylesheet: &'a Stylesheet) -> StyledNode<'a> {
+    StyledNode {
         node: root,
         specified_values: match root.data {
             NodeType::Element(ref elem) => specified_values(elem, stylesheet),
-            NodeType::Text(_) => HashMap::new(), // just an empty placeholder
+            NodeType::Text(ref content) => calc_text_height_width(content),
         },
         children: root.children
             .iter().map(|child| style_tree(child, stylesheet)).collect(),
     }
+}
+
+fn calc_text_height_width(content: &String) -> PropertyMap {
+    let height = Value::Length(16.0, Unit::Px);
+    let width = Value::Length(content.len() as f64 * 8.0, Unit::Px);
+    let mut values = HashMap::new();
+    values.insert("height".to_string(), height);
+    values.insert("width".to_string(), width);
+    values.insert("display".to_string(), Value::Keyword("block".to_string()));
+    values
 }
 
 fn specified_values(elem: &ElementData, stylesheet: &Stylesheet) -> PropertyMap {

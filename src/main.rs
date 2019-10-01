@@ -1,9 +1,12 @@
 
 use rust_browser::html;
 use rust_browser::css;
+use rust_browser::style;
+use rust_browser::layout;
 
 use clap::{App, Arg};
 
+use std::default::Default;
 use std::fs::OpenOptions;
 use std::io::prelude::*;
 
@@ -43,4 +46,12 @@ fn main() {
         .expect("cannot read file");
     let stylesheet = css::parse(css_source);
     css::show_css(&stylesheet);
+
+    let mut viewport: layout::Dimensions = Default::default();
+    viewport.content.width = 800.0;
+    viewport.content.height = 600.0;
+
+    let style_tree = style::style_tree(&html_tree, &stylesheet);
+    let layout_tree = layout::layout_tree(&style_tree, viewport);
+    println!("{}", layout_tree);
 }

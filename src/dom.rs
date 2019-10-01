@@ -24,7 +24,7 @@ pub struct ElementData {
 impl Node {
     pub fn text(data: String) -> Node {
         Node {
-            children: vec![],
+            children: Vec::new(),
             data: NodeType::Text(data),
         }
     }

@@ -317,7 +317,7 @@ fn test_parse_css() {
                         Selector::Simple(SimpleSelector {
                             tag_name: Some("div".to_string()),
                             id: None,
-                            class: vec![],
+                            class: Vec::new(),
                         }),
                     ],
                     declarations: vec![

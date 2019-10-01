@@ -30,7 +30,7 @@ struct Parser {
 
 impl Parser {
     fn parse_nodes(&mut self) -> Vec<dom::Node> {
-        let mut nodes = vec![];
+        let mut nodes = Vec::new();
         loop {
             self.consume_whitespace();
             if self.eof() || self.starts_with("</") {
@@ -56,7 +56,7 @@ impl Parser {
         assert_eq!(self.consume_char(), '>');
 
         if is_self_closing_tag(name.as_str()) {
-            return dom::Node::elem(name, attrs, vec![]);
+            return dom::Node::elem(name, attrs, Vec::new());
         }
 
         let children = self.parse_nodes();
