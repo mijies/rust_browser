@@ -1,6 +1,7 @@
 use crate::style::{Display, StyledNode};
 use crate::css::{Unit, Value};
 use crate::css::Value::{Keyword, Length};
+use crate::dom::NodeType;
 use std::default::Default;
 use std::fmt;
 
@@ -60,7 +61,6 @@ fn make_layout_tree<'a>(node: &'a StyledNode<'a>) -> LayoutBox<'a> {
     });
 
     for child in &node.children {
-        println!("{}: {:?}", child.has_text_node(), child.display());
         match child.display() {
             Display::Block => root.children.push(make_layout_tree(child)),
             Display::Inline => root.get_inline_container()
@@ -83,7 +83,12 @@ impl<'a> LayoutBox<'a> {
     fn layout(&mut self, containing_block: Dimensions) {
         match self.box_type {
             BoxType::BlockNode(_) => self.layout_block(containing_block),
-            BoxType::InlineNode(_) | BoxType::AnonymousBlock => {},
+            BoxType::InlineNode(_) => self.layout_inline(containing_block),
+            BoxType::AnonymousBlock => for child in &mut self.children {
+                child.layout(containing_block);
+                self.dimensions.content.width = child.dimensions.margin_box().width;
+                self.dimensions.content.height += child.dimensions.margin_box().height;
+            },
         }
     }
 
@@ -94,12 +99,12 @@ impl<'a> LayoutBox<'a> {
         self.calculate_block_height(); // dependent on its children height
     }
 
-    // TODO: correct not to violate the reguration below
+    // TODO: checkout if not violate the regurations
     // https://www.w3.org/TR/CSS2/visudet.html#blockwidth
     fn calculate_block_width(&mut self, containing_block: Dimensions) {
         let style = self.get_style_node();
         let auto = Keyword("auto".to_string()); // initial vaule
-        let zero = Length(0.0, Unit::Px);       // initial vaule for margin border passing
+        let zero = Length(0.0, Unit::Px);       // initial vaule for margin border padding
 
         let mut width = style.value("width").unwrap_or(auto.clone());
         let mut margin_left = style.lookup("margin-left", "margin", &zero);
@@ -177,11 +182,11 @@ impl<'a> LayoutBox<'a> {
         }
     }
 
-    // TODO: correct not to violate the reguration below
+    // TODO: checkout if not violate the regurations
     // https://www.w3.org/TR/CSS2/visudet.html#normal-block
     fn calculate_block_position(&mut self, containing_block: Dimensions) {
         let style = self.get_style_node();
-        let zero = Length(0.0, Unit::Px); // initial vaule for margin border passing
+        let zero = Length(0.0, Unit::Px); // initial vaule for margin border padding
         let d = &mut self.dimensions;
 
         d.margin.top = style.lookup("margin-top", "margin", &zero).to_px();
@@ -200,13 +205,60 @@ impl<'a> LayoutBox<'a> {
         let d = &mut self.dimensions;
         for child in &mut self.children {
             child.layout(*d);
-            d.content.height += child.dimensions.margin_box().height;
+            d.content.height += child.dimensions.margin_box().height; // add up
         }
     }
 
     fn calculate_block_height(&mut self) {
         if let Some(Length(h, Unit::Px)) = self.get_style_node().value("height") {
             self.dimensions.content.height = h; // override the height by children if explicitly set
+        }
+    }
+
+    fn layout_inline(&mut self, containing_block: Dimensions) {
+        self.calculate_inline_position(containing_block); // position in its container
+        self.layout_inline_children();
+        
+        // if the node is text, the width and height of the text become of the node
+        match self.get_style_node().node.data {
+            NodeType::Element(_) => {}
+            NodeType::Text(ref body) => {
+                // TODO: fix the hardcodeds
+                self.dimensions.content.width = body.len() as f64 * 8.0;
+                self.dimensions.content.height = 16.0;
+            }
+        }
+    }
+
+    // TODO: checkout if not violate the regurations
+    // https://www.w3.org/TR/CSS2/visudet.html#inline-width
+    fn calculate_inline_position(&mut self, containing_block: Dimensions) {
+        let style = self.get_style_node();
+        let d = &mut self.dimensions;
+        let zero = Length(0.0, Unit::Px); // initial vaule for margin border padding
+
+        d.margin.left = style.lookup("margin-left", "margin", &zero).to_px();
+        d.margin.right = style.lookup("margin-right", "margin", &zero).to_px();
+        d.margin.top = style.lookup("margin-top", "margin", &zero).to_px();
+        d.margin.bottom = style.lookup("margin-bottom", "margin", &zero).to_px();
+
+        // Inline has no border and padding left/right?
+        d.border.top = style.lookup("border-top-width", "border-width", &zero).to_px();
+        d.border.bottom = style.lookup("border-bottom-width", "border-width", &zero).to_px();
+        d.padding.top = style.lookup("padding-top", "padding", &zero).to_px();
+        d.padding.bottom = style.lookup("padding-bottom", "padding", &zero).to_px();
+
+        d.content.x = containing_block.content.x + d.margin.left + d.border.left + d.padding.left;
+        d.content.y = containing_block.content.height // add up the previous boxes in the container
+            + containing_block.content.y + d.margin.top + d.border.top + d.padding.top;
+    }
+
+    fn layout_inline_children(&mut self) {
+        let d = &mut self.dimensions;
+        for child in &mut self.children {
+            child.layout(*d);
+            d.content.width = child.dimensions.margin_box().width;
+            d.content.height += child.dimensions.margin_box().height; // add up
         }
     }
 
@@ -261,6 +313,7 @@ impl Rect {
 }
 
 impl<'a> fmt::Display for LayoutBox<'a> { // type Result = Result<(), Error>;
+    // TODO: implement more later
     fn fmt(&self, f: &mut fmt::Formatter) -> fmt::Result {
         writeln!(f, "{:?}", self.dimensions)?;
         for child in &self.children {

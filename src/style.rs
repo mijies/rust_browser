@@ -1,5 +1,5 @@
 use crate::dom::{ElementData, Node, NodeType};
-use crate::css::{Rule, Selector, SimpleSelector, Specificity, Stylesheet, Unit, Value};
+use crate::css::{Rule, Selector, SimpleSelector, Specificity, Stylesheet, Value};
 use std::collections::HashMap;
 
 type PropertyMap = HashMap<String, Value>;
@@ -54,21 +54,11 @@ pub fn style_tree<'a>(root: &'a Node, stylesheet: &'a Stylesheet) -> StyledNode<
         node: root,
         specified_values: match root.data {
             NodeType::Element(ref elem) => specified_values(elem, stylesheet),
-            NodeType::Text(ref content) => calc_text_height_width(content),
+            NodeType::Text(_) => PropertyMap::new(),
         },
         children: root.children
             .iter().map(|child| style_tree(child, stylesheet)).collect(),
     }
-}
-
-fn calc_text_height_width(content: &String) -> PropertyMap {
-    let height = Value::Length(16.0, Unit::Px);
-    let width = Value::Length(content.len() as f64 * 8.0, Unit::Px);
-    let mut values = HashMap::new();
-    values.insert("height".to_string(), height);
-    values.insert("width".to_string(), width);
-    values.insert("display".to_string(), Value::Keyword("block".to_string()));
-    values
 }
 
 fn specified_values(elem: &ElementData, stylesheet: &Stylesheet) -> PropertyMap {
