@@ -1,5 +1,5 @@
 use crate::dom::{ElementData, Node, NodeType};
-use crate::css::{Rule, Selector, SimpleSelector, Specificity, Stylesheet, Value};
+use crate::css::{Color, Rule, Selector, SimpleSelector, Specificity, Stylesheet, Value};
 use std::collections::HashMap;
 
 type PropertyMap = HashMap<String, Value>;
@@ -41,6 +41,13 @@ impl<'a> StyledNode<'a> {
         match self.node.data {
             NodeType::Text(_) => true,
             _ => false,
+        }
+    }
+
+    pub fn get_color(&self, name: &str) -> Option<Color> {
+        match self.value(name) {
+            Some(Value::Color(color)) => Some(color),
+            _ => None,
         }
     }
 

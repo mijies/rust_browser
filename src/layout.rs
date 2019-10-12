@@ -72,7 +72,7 @@ fn make_layout_tree<'a>(node: &'a StyledNode<'a>) -> LayoutBox<'a> {
 }
 
 impl<'a> LayoutBox<'a> {
-    fn new(box_type: BoxType<'a>) -> LayoutBox<'a> {
+    pub fn new(box_type: BoxType<'a>) -> LayoutBox<'a> {
         LayoutBox {
             dimensions: Default::default(),
             box_type: box_type,
@@ -196,15 +196,19 @@ impl<'a> LayoutBox<'a> {
         d.padding.top = style.lookup("padding-top", "padding", &zero).to_px();
         d.padding.bottom = style.lookup("padding-bottom", "padding", &zero).to_px();
 
-        d.content.x = containing_block.content.x + d.margin.left + d.border.left + d.padding.left;
+        d.content.x = containing_block.content.x // TODO: previous children dimension must be added
+            + d.margin.left + d.border.left + d.padding.left;
+
         d.content.y = containing_block.content.height // add up the previous boxes in the container
             + containing_block.content.y + d.margin.top + d.border.top + d.padding.top;
     }
 
     fn layout_block_children(&mut self) {
         let d = &mut self.dimensions;
+        let child_x_pos = d.content.x;
         for child in &mut self.children {
             child.layout(*d);
+            child.dimensions.content.x += child_x_pos;
             d.content.height += child.dimensions.margin_box().height; // add up
         }
     }
@@ -257,8 +261,9 @@ impl<'a> LayoutBox<'a> {
         let d = &mut self.dimensions;
         for child in &mut self.children {
             child.layout(*d);
-            d.content.width = child.dimensions.margin_box().width;
-            d.content.height += child.dimensions.margin_box().height; // add up
+            d.content.width += child.dimensions.margin_box().width; // TODO
+            d.content.height = f64::max(d.content.height, child.dimensions.margin_box().height);
+            // d.content.height += child.dimensions.margin_box().height; // add up the height
         }
     }
 
@@ -292,7 +297,7 @@ impl Dimensions {
         self.border_box().expanded_by(self.margin)
     }
 
-    fn border_box(&self) -> Rect {
+    pub fn border_box(&self) -> Rect {
         self.padding_box().expanded_by(self.border)
     }
 

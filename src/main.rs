@@ -1,8 +1,10 @@
 
-use rust_browser::html;
 use rust_browser::css;
-use rust_browser::style;
+use rust_browser::html;
 use rust_browser::layout;
+use rust_browser::painter;
+use rust_browser::renderer;
+use rust_browser::style;
 
 use clap::{App, Arg};
 
@@ -47,11 +49,19 @@ fn main() {
     let stylesheet = css::parse(css_source);
     css::show_css(&stylesheet);
 
+    println!("LAYOUT:");
     let mut viewport: layout::Dimensions = Default::default();
-    viewport.content.width = 800.0;
-    viewport.content.height = 600.0;
+    viewport.content.width = 480.0;
+    viewport.content.height = 360.0;
 
     let style_tree = style::style_tree(&html_tree, &stylesheet);
     let layout_tree = layout::layout_tree(&style_tree, viewport);
     println!("{}", layout_tree);
+
+    println!("DISPLAY:");
+    let mut display_list = Vec::new();
+    painter::render_layout_box_tree(&mut display_list, &layout_tree);
+    println!("{:?}", display_list); 
+
+    renderer::render(&display_list, &viewport);
 }
