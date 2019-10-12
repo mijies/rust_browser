@@ -227,7 +227,7 @@ impl Parser {
 
     fn parse_value(&mut self) -> Value {
         match self.next_char() {
-            '0'...'9' => self.parse_length(),
+            '0'..='9' => self.parse_length(),
             '#' => self.parse_color(),
             _ => Value::Keyword(self.parse_identifier()),
         }
@@ -239,7 +239,7 @@ impl Parser {
 
     fn parse_float(&mut self) -> f64 {
         let f = self.consume_while(|c| match c {
-            '0'...'9' | '.' => true,
+            '0'..='9' | '.' => true,
             _ => false,
         });
         f.parse().unwrap()

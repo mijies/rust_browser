@@ -36,10 +36,10 @@ impl Canvas {
         match *display_command {
             DisplayCommand::SolidColor(color, rect) => {
                 // clip out the canvas rectangle boundaries.
-                let x_left = rect.x.clamp(0.0, self.width as f64) as usize;
-                let y_top = rect.y.clamp(0.0, self.height as f64) as usize;
-                let x_right = (rect.x + rect.width).clamp(0.0, self.width as f64) as usize;
-                let y_bottom = (rect.y + rect.height).clamp(0.0, self.height as f64) as usize;
+                let x_left = rect.x.max(0.0).min(self.width as f64) as usize;
+                let y_top = rect.y.max(0.0).min(self.height as f64) as usize;
+                let x_right = (rect.x + rect.width).max(0.0).min(self.width as f64) as usize;
+                let y_bottom = (rect.y + rect.height).max(0.0).min(self.height as f64) as usize;
 
                 for y in y_top..y_bottom {
                     for x in x_left..x_right {
@@ -49,16 +49,6 @@ impl Canvas {
             }
             _ => {}
         }
-    }
-}
-
-trait Clamp{ // could be added to the standard library in the future
-    fn clamp(self, lower: Self, upper: Self) -> Self;
-}
-
-impl Clamp for f64 {
-    fn clamp(self, lower: f64, upper: f64) -> f64 {
-        self.max(lower).min(upper)
     }
 }
 
